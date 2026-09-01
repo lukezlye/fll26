@@ -1,12 +1,14 @@
 """Wildfire prevention advisor, powered by an explainable risk model."""
 
 import json
+import os
 import re
 from urllib.error import URLError
 from urllib.parse import urlencode
 from urllib.request import urlopen
 
 from flask import Flask, jsonify, render_template, request
+from openai import APIError, OpenAI
 
 app = Flask(__name__)
 
@@ -107,46 +109,50 @@ def assess_risk(data):
 
 
 def chat_reply(message):
-    """Return a concise, safety-first natural-language reply without an API key."""
+    """Generate a source-grounded prevention answer with OpenAI web search."""
     text = message.strip().lower()
     if not text:
         raise ValueError("Please type a question for FireWise AI.")
+    if not os.environ.get("OPENAI_API_KEY"):
+        raise RuntimeError("Source-grounded AI is not configured. Set OPENAI_API_KEY on the server and restart the app.")
 
-    if any(word in text for word in ("emergency", "fire nearby", "evacu", "smoke", "flames")):
-        return (
-            "If there is an active fire, smoke, or an evacuation warning, do not rely on this tool. "
-            "Follow official emergency alerts, leave immediately if instructed, and call emergency services when safe."
+    try:
+        response = OpenAI().responses.create(
+            model=os.getenv("OPENAI_MODEL", "gpt-5.4"),
+            tools=[{"type": "web_search"}],
+            include=["web_search_call.action.sources"],
+            instructions=(
+                "You are FireWise AI, a careful wildfire-prevention assistant. Research before answering. "
+                "Prioritize current official sources such as fire agencies, emergency management, weather services, "
+                "and public-health authorities. Explain your practical reasoning concisely, distinguish facts from "
+                "general guidance, and say when local authorities take precedence. If an active emergency may be involved, "
+                "tell the user to follow official alerts immediately. Do not claim to replace emergency services."
+            ),
+            input=message,
         )
-    if any(word in text for word in ("grill", "barbecue", "bbq", "fire pit", "campfire", "burn")):
-        return (
-            "Check your local fire restrictions before using any open flame. During dry, windy, or high-risk conditions, "
-            "skip burning and use an electric or gas alternative only when local rules allow it."
-        )
-    if any(word in text for word in ("defensible", "yard", "brush", "vegetation", "plants", "garden")):
-        return (
-            "Start closest to the building: remove dry leaves and needles, use noncombustible material in the first 5 feet, "
-            "and trim or space plants so flames cannot easily travel toward the structure."
-        )
-    if any(word in text for word in ("evacuation", "evacuate", "leave", "plan")):
-        return (
-            "Make a two-route evacuation plan, pack medications and documents, keep your vehicle fueled, and sign up for local alerts. "
-            "When officials issue an evacuation order, leave promptly."
-        )
-    if any(word in text for word in ("risk", "weather", "wind", "hot", "humidity", "dry")):
-        numbers = [float(value) for value in re.findall(r"\d+(?:\.\d+)?", text)]
-        if numbers:
-            return (
-                "I can assess exact conditions with the prevention-priority form above. "
-                "Enter temperature, humidity, wind, vegetation dryness, drought, and ignition-source risk for a tailored score."
-            )
-        return (
-            "Hot, dry, and windy weather raises wildfire risk, especially where vegetation is dry. "
-            "Use the assessment form above for a tailored prevention-priority score."
-        )
-    return (
-        "I can help with wildfire prevention, defensible space, safe outdoor activities, evacuation readiness, and fire-weather risk. "
-        "Try asking: “How do I make my yard safer?” or “Is a fire pit a good idea today?”"
-    )
+    except APIError as error:
+        raise RuntimeError("The source-grounded AI service is temporarily unavailable. Please try again.") from error
+    return {"reply": response.output_text, "sources": extract_sources(response.model_dump())}
+
+
+def extract_sources(value):
+    """Find unique URL/title pairs in the Responses API output without exposing internals."""
+    sources, seen = [], set()
+
+    def visit(item):
+        if isinstance(item, dict):
+            url = item.get("url")
+            if isinstance(url, str) and url.startswith(("https://", "http://")) and url not in seen:
+                seen.add(url)
+                sources.append({"title": item.get("title") or url, "url": url})
+            for child in item.values():
+                visit(child)
+        elif isinstance(item, list):
+            for child in item:
+                visit(child)
+
+    visit(value)
+    return sources[:6]
 
 
 def live_weather(location):
@@ -199,9 +205,11 @@ def api_assess():
 def api_chat():
     data = request.get_json(silent=True) or request.form
     try:
-        return jsonify({"reply": chat_reply(data.get("message", ""))})
+        return jsonify(chat_reply(data.get("message", "")))
     except ValueError as error:
         return jsonify({"error": str(error)}), 400
+    except RuntimeError as error:
+        return jsonify({"error": str(error)}), 503
 
 
 @app.post("/api/live-weather")

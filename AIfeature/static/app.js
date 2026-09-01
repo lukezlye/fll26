@@ -57,6 +57,23 @@ function addMessage(sender, text, className) {
   conversation.append(line);
 }
 
+function addSources(sources) {
+  if (!sources?.length) return;
+  const list = document.createElement("ul");
+  list.className = "sources";
+  sources.forEach((source) => {
+    const item = document.createElement("li");
+    const link = document.createElement("a");
+    link.href = source.url;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.textContent = source.title;
+    item.append(link);
+    list.append(item);
+  });
+  conversation.append(list);
+}
+
 chatForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const question = message.value.trim();
@@ -71,5 +88,6 @@ chatForm.addEventListener("submit", async (event) => {
   const data = await response.json();
   const reply = response.ok ? data.reply : data.error;
   addMessage("FireWise AI", reply, "bot");
+  if (response.ok) addSources(data.sources);
   conversation.scrollTop = conversation.scrollHeight;
 });

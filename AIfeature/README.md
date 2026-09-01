@@ -19,4 +19,16 @@ Open `http://127.0.0.1:5000` in a browser.
 
 `POST /api/chat` accepts `{ "message": "..." }` and returns an educational, safety-first prevention response for common questions.
 
+## Source-grounded AI setup
+
+The chat uses the OpenAI Responses API with web search, so it can research current sources and display the URLs used in its answer. Create an API key, then set it in the server environment; never place it in source code or commit it.
+
+```bash
+export OPENAI_API_KEY="your_api_key"
+export OPENAI_MODEL="gpt-5.4" # optional override
+python app.py
+```
+
+Without `OPENAI_API_KEY`, the chat returns a configuration message. The live weather tool continues to work without it.
+
 `POST /api/live-weather` accepts `{ "location": "..." }`, geocodes the place, and retrieves current temperature, humidity, and wind from [Open-Meteo](https://open-meteo.com/en/docs). Those values populate the assessment form; vegetation dryness, drought, and ignition-source risk remain user-provided local observations.
