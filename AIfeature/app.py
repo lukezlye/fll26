@@ -3,6 +3,7 @@
 import json
 import os
 import re
+from pathlib import Path
 from urllib.error import URLError
 from urllib.parse import urlencode
 from urllib.request import urlopen
@@ -11,6 +12,21 @@ from flask import Flask, jsonify, render_template, request
 from openai import APIError, OpenAI
 
 app = Flask(__name__)
+
+
+def load_local_env():
+    """Load local development secrets without overriding deployed environment variables."""
+    env_file = Path(__file__).with_name(".env")
+    if not env_file.exists():
+        return
+    for line in env_file.read_text().splitlines():
+        if "=" not in line or line.lstrip().startswith("#"):
+            continue
+        key, value = line.split("=", 1)
+        os.environ.setdefault(key.strip(), value.strip())
+
+
+load_local_env()
 
 
 def fetch_json(base_url, parameters):
