@@ -9,7 +9,7 @@ from urllib.parse import urlencode
 from urllib.request import urlopen
 
 from flask import Flask, jsonify, render_template, request
-from openai import APIError, OpenAI
+from openai import APIError, AuthenticationError, OpenAI, RateLimitError
 
 app = Flask(__name__)
 
@@ -146,6 +146,10 @@ def chat_reply(message):
             ),
             input=message,
         )
+    except AuthenticationError as error:
+        raise RuntimeError("The configured OpenAI API key was rejected. Update OPENAI_API_KEY and restart the app.") from error
+    except RateLimitError as error:
+        raise RuntimeError("The OpenAI project has no available API credits or has reached its rate limit. Add credits, then try again.") from error
     except APIError as error:
         raise RuntimeError("The source-grounded AI service is temporarily unavailable. Please try again.") from error
     return {"reply": response.output_text, "sources": extract_sources(response.model_dump())}
