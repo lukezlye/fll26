@@ -11,6 +11,7 @@ input, button { border-radius: 8px; font: inherit; padding: .65rem .75rem; }
 input { border: 1px solid #bdc8b8; }
 button { margin-top: .5rem; border: 0; background: #b94d17; color: white; font-weight: 700; cursor: pointer; }
 button:hover { background: #913b12; }
+.live-weather { padding: 1rem; background: #edf5eb; border-radius: 10px; }.live-weather > div { display: flex; gap: .5rem; }.live-weather input { min-width: 0; flex: 1; }.live-weather button { margin: 0; }.source { margin: .6rem 0 0; color: #506052; font-size: .85rem; }
 .result { border-left: 2px solid #d4ddcf; padding-left: 1.5rem; }
 .score { font-size: 4rem; font-weight: 800; line-height: 1; margin: 0; }.score span { font-size: 1.2rem; color: #647168; }
 .note { color: #506052; margin-top: 1.5rem; font-size: .9rem; }.error { color: #b91c1c; }

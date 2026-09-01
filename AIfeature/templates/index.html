@@ -15,6 +15,11 @@
       </section>
       <section class="panel">
         <form id="risk-form">
+          <div class="live-weather">
+            <label for="location">Location for live weather</label>
+            <div><input id="location" placeholder="e.g. Los Angeles, CA"><button id="weather-button" type="button">Get live weather</button></div>
+            <p id="weather-status" class="source">Uses live Open-Meteo temperature, humidity, and wind data.</p>
+          </div>
           <label>Temperature (°C)<input name="temperature" type="number" value="32" min="-30" max="60" required></label>
           <label>Humidity (%)<input name="humidity" type="number" value="22" min="0" max="100" required></label>
           <label>Wind speed (km/h)<input name="wind_speed" type="number" value="28" min="0" max="160" required></label>

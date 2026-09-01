@@ -1,10 +1,24 @@
 """Wildfire prevention advisor, powered by an explainable risk model."""
 
+import json
 import re
+from urllib.error import URLError
+from urllib.parse import urlencode
+from urllib.request import urlopen
 
 from flask import Flask, jsonify, render_template, request
 
 app = Flask(__name__)
+
+
+def fetch_json(base_url, parameters):
+    """Fetch a small JSON response from a public data service."""
+    url = f"{base_url}?{urlencode(parameters)}"
+    try:
+        with urlopen(url, timeout=8) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except (URLError, TimeoutError, json.JSONDecodeError) as error:
+        raise ValueError("Live weather is unavailable right now. Try again shortly.") from error
 
 
 def bounded_number(value, low, high, label):
@@ -135,6 +149,38 @@ def chat_reply(message):
     )
 
 
+def live_weather(location):
+    location = location.strip()
+    if not location:
+        raise ValueError("Enter a city or place name to get live weather.")
+    geocoding = fetch_json(
+        "https://geocoding-api.open-meteo.com/v1/search",
+        {"name": location, "count": 1, "language": "en", "format": "json"},
+    )
+    results = geocoding.get("results", [])
+    if not results:
+        raise ValueError("Location not found. Try a city and country or state.")
+    place = results[0]
+    weather = fetch_json(
+        "https://api.open-meteo.com/v1/forecast",
+        {
+            "latitude": place["latitude"],
+            "longitude": place["longitude"],
+            "current": "temperature_2m,relative_humidity_2m,wind_speed_10m",
+            "wind_speed_unit": "kmh",
+        },
+    )["current"]
+    name = ", ".join(part for part in (place.get("name"), place.get("admin1"), place.get("country")) if part)
+    return {
+        "location": name,
+        "temperature": weather["temperature_2m"],
+        "humidity": weather["relative_humidity_2m"],
+        "wind_speed": weather["wind_speed_10m"],
+        "observed_at": weather.get("time"),
+        "source": "Open-Meteo weather data",
+    }
+
+
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -154,6 +200,15 @@ def api_chat():
     data = request.get_json(silent=True) or request.form
     try:
         return jsonify({"reply": chat_reply(data.get("message", ""))})
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
+
+
+@app.post("/api/live-weather")
+def api_live_weather():
+    data = request.get_json(silent=True) or request.form
+    try:
+        return jsonify(live_weather(data.get("location", "")))
     except ValueError as error:
         return jsonify({"error": str(error)}), 400
 

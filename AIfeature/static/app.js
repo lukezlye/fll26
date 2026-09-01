@@ -1,5 +1,8 @@
 const form = document.querySelector("#risk-form");
 const result = document.querySelector("#result");
+const weatherButton = document.querySelector("#weather-button");
+const locationInput = document.querySelector("#location");
+const weatherStatus = document.querySelector("#weather-status");
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -21,6 +24,24 @@ form.addEventListener("submit", async (event) => {
     <p><strong>Main factors:</strong> ${assessment.top_factors.join(", ") || "None"}</p>
     <h3>Recommended actions</h3>
     <ul>${assessment.actions.map((action) => `<li>${action}</li>`).join("")}</ul>`;
+});
+
+weatherButton.addEventListener("click", async () => {
+  weatherStatus.textContent = "Getting live weather…";
+  const response = await fetch("/api/live-weather", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ location: locationInput.value }),
+  });
+  const weather = await response.json();
+  if (!response.ok) {
+    weatherStatus.textContent = weather.error;
+    return;
+  }
+  form.elements.temperature.value = weather.temperature;
+  form.elements.humidity.value = weather.humidity;
+  form.elements.wind_speed.value = weather.wind_speed;
+  weatherStatus.textContent = `${weather.location}: ${weather.temperature}°C, ${weather.humidity}% humidity, ${weather.wind_speed} km/h wind (${weather.source}, ${weather.observed_at}).`;
 });
 
 const chatForm = document.querySelector("#chat-form");

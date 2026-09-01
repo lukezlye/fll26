@@ -18,3 +18,5 @@ Open `http://127.0.0.1:5000` in a browser.
 `POST /api/assess` accepts JSON with `temperature`, `humidity`, `wind_speed`, `vegetation_dryness`, `drought_index`, and `ignition_risk`. Values are validated and the response includes a 0–100 score, risk level, drivers, and recommended prevention actions.
 
 `POST /api/chat` accepts `{ "message": "..." }` and returns an educational, safety-first prevention response for common questions.
+
+`POST /api/live-weather` accepts `{ "location": "..." }`, geocodes the place, and retrieves current temperature, humidity, and wind from [Open-Meteo](https://open-meteo.com/en/docs). Those values populate the assessment form; vegetation dryness, drought, and ignition-source risk remain user-provided local observations.
