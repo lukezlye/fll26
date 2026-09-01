@@ -22,3 +22,33 @@ form.addEventListener("submit", async (event) => {
     <h3>Recommended actions</h3>
     <ul>${assessment.actions.map((action) => `<li>${action}</li>`).join("")}</ul>`;
 });
+
+const chatForm = document.querySelector("#chat-form");
+const message = document.querySelector("#message");
+const conversation = document.querySelector("#conversation");
+
+function addMessage(sender, text, className) {
+  const line = document.createElement("p");
+  line.className = className;
+  const name = document.createElement("strong");
+  name.textContent = `${sender}: `;
+  line.append(name, text);
+  conversation.append(line);
+}
+
+chatForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const question = message.value.trim();
+  if (!question) return;
+  addMessage("You", question, "user");
+  message.value = "";
+  const response = await fetch("/api/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message: question }),
+  });
+  const data = await response.json();
+  const reply = response.ok ? data.reply : data.error;
+  addMessage("FireWise AI", reply, "bot");
+  conversation.scrollTop = conversation.scrollHeight;
+});

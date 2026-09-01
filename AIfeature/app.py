@@ -1,5 +1,7 @@
 """Wildfire prevention advisor, powered by an explainable risk model."""
 
+import re
+
 from flask import Flask, jsonify, render_template, request
 
 app = Flask(__name__)
@@ -90,6 +92,49 @@ def assess_risk(data):
     }
 
 
+def chat_reply(message):
+    """Return a concise, safety-first natural-language reply without an API key."""
+    text = message.strip().lower()
+    if not text:
+        raise ValueError("Please type a question for FireWise AI.")
+
+    if any(word in text for word in ("emergency", "fire nearby", "evacu", "smoke", "flames")):
+        return (
+            "If there is an active fire, smoke, or an evacuation warning, do not rely on this tool. "
+            "Follow official emergency alerts, leave immediately if instructed, and call emergency services when safe."
+        )
+    if any(word in text for word in ("grill", "barbecue", "bbq", "fire pit", "campfire", "burn")):
+        return (
+            "Check your local fire restrictions before using any open flame. During dry, windy, or high-risk conditions, "
+            "skip burning and use an electric or gas alternative only when local rules allow it."
+        )
+    if any(word in text for word in ("defensible", "yard", "brush", "vegetation", "plants", "garden")):
+        return (
+            "Start closest to the building: remove dry leaves and needles, use noncombustible material in the first 5 feet, "
+            "and trim or space plants so flames cannot easily travel toward the structure."
+        )
+    if any(word in text for word in ("evacuation", "evacuate", "leave", "plan")):
+        return (
+            "Make a two-route evacuation plan, pack medications and documents, keep your vehicle fueled, and sign up for local alerts. "
+            "When officials issue an evacuation order, leave promptly."
+        )
+    if any(word in text for word in ("risk", "weather", "wind", "hot", "humidity", "dry")):
+        numbers = [float(value) for value in re.findall(r"\d+(?:\.\d+)?", text)]
+        if numbers:
+            return (
+                "I can assess exact conditions with the prevention-priority form above. "
+                "Enter temperature, humidity, wind, vegetation dryness, drought, and ignition-source risk for a tailored score."
+            )
+        return (
+            "Hot, dry, and windy weather raises wildfire risk, especially where vegetation is dry. "
+            "Use the assessment form above for a tailored prevention-priority score."
+        )
+    return (
+        "I can help with wildfire prevention, defensible space, safe outdoor activities, evacuation readiness, and fire-weather risk. "
+        "Try asking: “How do I make my yard safer?” or “Is a fire pit a good idea today?”"
+    )
+
+
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -100,6 +145,15 @@ def api_assess():
     data = request.get_json(silent=True) or request.form
     try:
         return jsonify(assess_risk(data))
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
+
+
+@app.post("/api/chat")
+def api_chat():
+    data = request.get_json(silent=True) or request.form
+    try:
+        return jsonify({"reply": chat_reply(data.get("message", ""))})
     except ValueError as error:
         return jsonify({"error": str(error)}), 400
 

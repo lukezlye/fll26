@@ -14,4 +14,7 @@ button:hover { background: #913b12; }
 .result { border-left: 2px solid #d4ddcf; padding-left: 1.5rem; }
 .score { font-size: 4rem; font-weight: 800; line-height: 1; margin: 0; }.score span { font-size: 1.2rem; color: #647168; }
 .note { color: #506052; margin-top: 1.5rem; font-size: .9rem; }.error { color: #b91c1c; }
+.chat { margin-top: 2rem; padding: 2rem; background: #fffdf8; border-radius: 20px; box-shadow: 0 16px 40px #42533a22; }.chat h2 { margin-top: 0; }
+.conversation { max-height: 280px; overflow-y: auto; padding: .5rem; background: #eef3e9; border-radius: 10px; }.conversation p { padding: .75rem; border-radius: 9px; line-height: 1.45; }.bot { background: white; }.user { background: #dcebd8; margin-left: 10%; }
+.chat-form { display: flex; gap: .7rem; margin-top: 1rem; }.chat-form input { flex: 1; }.chat-form button { margin: 0; }.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
 @media (max-width: 700px) { main { padding-top: 2rem; }.panel { grid-template-columns: 1fr; padding: 1.25rem; }.result { border-left: 0; border-top: 2px solid #d4ddcf; padding: 1rem 0 0; } }
