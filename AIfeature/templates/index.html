@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FireWise AI | Wildfire Prevention</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  </head>
+  <body>
+    <main>
+      <section class="intro">
+        <p class="eyebrow">Wildfire prevention assistant</p>
+        <h1>FireWise AI</h1>
+        <p>Enter local conditions to get an explainable prevention-priority score and practical actions.</p>
+      </section>
+      <section class="panel">
+        <form id="risk-form">
+          <label>Temperature (°C)<input name="temperature" type="number" value="32" min="-30" max="60" required></label>
+          <label>Humidity (%)<input name="humidity" type="number" value="22" min="0" max="100" required></label>
+          <label>Wind speed (km/h)<input name="wind_speed" type="number" value="28" min="0" max="160" required></label>
+          <label>Vegetation dryness (0–100)<input name="vegetation_dryness" type="number" value="70" min="0" max="100" required></label>
+          <label>Drought index (0–100)<input name="drought_index" type="number" value="55" min="0" max="100" required></label>
+          <label>Ignition-source risk (0–100)<input name="ignition_risk" type="number" value="30" min="0" max="100" required></label>
+          <button type="submit">Assess prevention priority</button>
+        </form>
+        <div id="result" class="result" aria-live="polite">
+          <p>Submit conditions to see the assessment.</p>
+        </div>
+      </section>
+      <p class="note">This educational tool supports prevention planning; always follow local fire authorities and emergency alerts.</p>
+    </main>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+  </body>
+</html>
